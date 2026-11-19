@@ -1,6 +1,7 @@
 import { buildApp } from './app';
 import { loadConfig } from './config';
 import { createPool, waitForDatabase } from './db';
+import { runMigrations } from './migrate';
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -8,6 +9,11 @@ async function main(): Promise<void> {
   await waitForDatabase(pool);
 
   const app = buildApp({ config, pool });
+
+  const applied = await runMigrations(pool);
+  if (applied.length > 0) {
+    app.log.warn({ applied }, 'applied migrations');
+  }
 
   let shuttingDown = false;
   const shutdown = async (signal: string) => {

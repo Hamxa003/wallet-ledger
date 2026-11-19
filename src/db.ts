@@ -2,12 +2,16 @@ import { Pool } from 'pg';
 import type { Config } from './config';
 
 export function createPool(config: Config): Pool {
-  return new Pool({
+  const pool = new Pool({
     connectionString: config.databaseUrl,
     max: config.poolMax,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
   });
+  pool.on('error', (err) => {
+    console.error('idle database client error', err.message);
+  });
+  return pool;
 }
 
 export async function waitForDatabase(pool: Pool, attempts = 30, delayMs = 1_000): Promise<void> {

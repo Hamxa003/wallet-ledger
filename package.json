@@ -12,6 +12,7 @@
     "start": "node dist/server.js",
     "dev": "tsc -p tsconfig.json && node dist/server.js",
     "migrate": "node dist/migrate-cli.js",
+    "seed": "node dist/seed.js",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

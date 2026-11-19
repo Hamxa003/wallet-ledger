@@ -11,6 +11,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     apiToken: TEST_TOKEN,
     databaseUrl: 'postgres://unused',
     poolMax: 1,
+    workers: 1,
     ...overrides,
   };
 }

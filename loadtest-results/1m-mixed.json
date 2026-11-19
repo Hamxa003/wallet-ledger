@@ -1,0 +1,56 @@
+{
+  "options": {
+    "baseUrl": "http://localhost:8080",
+    "scenario": "mixed",
+    "durationMs": 30000,
+    "warmupMs": 5000,
+    "connections": 100,
+    "threads": 4,
+    "users": 100000,
+    "hotUser": "user_000001",
+    "out": "loadtest-results/1m-mixed.json"
+  },
+  "rows": [
+    {
+      "endpoint": "balance",
+      "requests": 326106,
+      "rps": 10870,
+      "p50": 4.082000000002154,
+      "p90": 5.925250000000233,
+      "p99": 12.19933299999866,
+      "max": 144.53949999999895,
+      "statuses": {
+        "200": 326106
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "credit",
+      "requests": 195001,
+      "rps": 6500,
+      "p50": 4.161291999999776,
+      "p90": 6.097999999999956,
+      "p99": 12.591334000000643,
+      "max": 153.28479100000186,
+      "statuses": {
+        "200": 195001
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "debit",
+      "requests": 130400,
+      "rps": 4347,
+      "p50": 4.176583999999821,
+      "p90": 6.114707999999155,
+      "p99": 12.591208000001643,
+      "max": 145.77920900000026,
+      "statuses": {
+        "200": 130348,
+        "409": 52
+      },
+      "unexpected": 0
+    }
+  ],
+  "errors": 0
+}

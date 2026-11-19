@@ -1,0 +1,95 @@
+{
+  "options": {
+    "baseUrl": "http://localhost:8080",
+    "scenario": "hot",
+    "durationMs": 30000,
+    "warmupMs": 5000,
+    "connections": 100,
+    "threads": 4,
+    "users": 100000,
+    "hotUser": "user_000001",
+    "out": "loadtest-results/1m-hot.json"
+  },
+  "rows": [
+    {
+      "endpoint": "balance (hot user)",
+      "requests": 15127,
+      "rps": 504,
+      "p50": 2.058499999999185,
+      "p90": 2.8162499999998545,
+      "p99": 5.251417000001311,
+      "max": 64.79987500000061,
+      "statuses": {
+        "200": 15127
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "balance (other users)",
+      "requests": 318162,
+      "rps": 10605,
+      "p50": 2.1874169999973674,
+      "p90": 2.9712499999986903,
+      "p99": 5.503415999999561,
+      "max": 68.02858300000025,
+      "statuses": {
+        "200": 318162
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "credit (hot user)",
+      "requests": 37864,
+      "rps": 1262,
+      "p50": 25.639374999998836,
+      "p90": 31.72833300000002,
+      "p99": 49.7117909999979,
+      "max": 95.23370799999975,
+      "statuses": {
+        "200": 37864
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "credit (other users)",
+      "requests": 191719,
+      "rps": 6391,
+      "p50": 2.29216599999927,
+      "p90": 3.115291000001889,
+      "p99": 5.691332999998849,
+      "max": 68.10291700000016,
+      "statuses": {
+        "200": 191719
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "debit (hot user)",
+      "requests": 22784,
+      "rps": 759,
+      "p50": 25.678874999999607,
+      "p90": 31.78962500000125,
+      "p99": 50.24991600000067,
+      "max": 96.40195799999947,
+      "statuses": {
+        "200": 22784
+      },
+      "unexpected": 0
+    },
+    {
+      "endpoint": "debit (other users)",
+      "requests": 127328,
+      "rps": 4244,
+      "p50": 2.301625000000058,
+      "p90": 3.125332999999955,
+      "p99": 5.697999999998501,
+      "max": 67.85216700000001,
+      "statuses": {
+        "200": 127273,
+        "409": 55
+      },
+      "unexpected": 0
+    }
+  ],
+  "errors": 0
+}

@@ -4,6 +4,7 @@ export interface Config {
   apiToken: string;
   databaseUrl: string;
   poolMax: number;
+  workers: number;
 }
 
 function required(name: string): string {
@@ -31,5 +32,6 @@ export function loadConfig(): Config {
     apiToken: required('API_TOKEN'),
     databaseUrl: required('DATABASE_URL'),
     poolMax: intFromEnv('PG_POOL_MAX', 20),
+    workers: intFromEnv('WEB_CONCURRENCY', 1),
   };
 }

@@ -38,7 +38,8 @@ services:
       API_TOKEN: ${API_TOKEN:-recruitment-test-token}
       DATABASE_URL: postgres://ledger:ledger@db:5432/ledger
       PORT: 8080
-      PG_POOL_MAX: 20
+      WEB_CONCURRENCY: 2
+      PG_POOL_MAX: 10
     ports:
       - "8080:8080"
     depends_on:
@@ -55,6 +56,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  loadtest:
+    build: .
+    profiles: ["loadtest"]
+    environment:
+      BASE_URL: http://api:8080
+      API_TOKEN: ${API_TOKEN:-recruitment-test-token}
+    entrypoint: ["node", "dist/loadtest.js"]
+    depends_on:
+      - api
 
 volumes:
   pgdata:

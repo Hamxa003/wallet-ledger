@@ -1,0 +1,99 @@
+=== ledger size
+ ledger_rows | users  
+-------------+--------
+    10888985 | 100000
+(1 row)
+
+
+=== get_balance (user_000001, 150k ledger rows)
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Index Scan using balances_pkey on balances (actual time=0.020..0.020 rows=1 loops=1)
+   Index Cond: ((user_id)::text = 'user_000001'::text)
+   Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=12
+ Planning Time: 0.420 ms
+ Execution Time: 0.161 ms
+(7 rows)
+
+
+=== credit (user_000001)
+                                  QUERY PLAN                                   
+-------------------------------------------------------------------------------
+ CTE Scan on bal (actual time=0.523..0.524 rows=1 loops=1)
+   Buffers: shared hit=12
+   CTE bal
+     ->  Insert on balances (actual time=0.523..0.523 rows=1 loops=1)
+           Conflict Resolution: UPDATE
+           Conflict Arbiter Indexes: balances_pkey
+           Tuples Inserted: 0
+           Conflicting Tuples: 1
+           Buffers: shared hit=12
+           ->  Result (actual time=0.120..0.120 rows=1 loops=1)
+   CTE entry
+     ->  Insert on ledger (actual time=0.354..0.354 rows=0 loops=1)
+           Buffers: shared hit=22
+           ->  CTE Scan on bal bal_1 (actual time=0.194..0.194 rows=1 loops=1)
+                 Buffers: shared hit=10
+ Planning Time: 0.037 ms
+ Execution Time: 1.035 ms
+(17 rows)
+
+
+=== debit (user_000001)
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Result (actual time=0.089..0.089 rows=1 loops=1)
+   Buffers: shared hit=11
+   CTE bal
+     ->  Update on balances (actual time=0.020..0.021 rows=1 loops=1)
+           Buffers: shared hit=6
+           ->  Index Scan using balances_pkey on balances (actual time=0.005..0.006 rows=1 loops=1)
+                 Index Cond: ((user_id)::text = 'user_000001'::text)
+                 Filter: (balance >= 500)
+                 Buffers: shared hit=4
+   CTE entry
+     ->  Insert on ledger (actual time=0.011..0.011 rows=0 loops=1)
+           Buffers: shared hit=7
+           ->  CTE Scan on bal (actual time=0.002..0.002 rows=1 loops=1)
+                 Buffers: shared hit=1
+   InitPlan 3 (returns $4)
+     ->  CTE Scan on bal bal_1 (actual time=0.021..0.021 rows=1 loops=1)
+           Buffers: shared hit=6
+   InitPlan 4 (returns $5)
+     ->  Index Only Scan using balances_pkey on balances balances_1 (actual time=0.067..0.067 rows=1 loops=1)
+           Index Cond: (user_id = 'user_000001'::text)
+           Heap Fetches: 1
+           Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=8
+ Planning Time: 0.063 ms
+ Execution Time: 0.114 ms
+(26 rows)
+
+
+=== for comparison: computing the balance from the ledger instead (rejected design)
+                                                     QUERY PLAN                                                      
+---------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate (actual time=126.898..128.532 rows=1 loops=1)
+   Buffers: shared hit=3701 read=2102 written=382
+   ->  Gather (actual time=126.815..128.526 rows=3 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=3701 read=2102 written=382
+         ->  Partial Aggregate (actual time=122.596..122.597 rows=1 loops=3)
+               Buffers: shared hit=3701 read=2102 written=382
+               ->  Parallel Bitmap Heap Scan on ledger (actual time=57.806..118.012 rows=70170 loops=3)
+                     Recheck Cond: ((user_id)::text = 'user_000001'::text)
+                     Heap Blocks: exact=1553
+                     Buffers: shared hit=3701 read=2102 written=382
+                     ->  Bitmap Index Scan on ledger_user_id_id_idx (actual time=61.049..61.049 rows=210512 loops=1)
+                           Index Cond: ((user_id)::text = 'user_000001'::text)
+                           Buffers: shared hit=539 read=739 written=333
+ Planning:
+   Buffers: shared hit=24
+ Planning Time: 0.132 ms
+ Execution Time: 128.692 ms
+(19 rows)
+

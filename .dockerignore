@@ -1,5 +1,8 @@
 node_modules
 dist
+loadtest-results
+test
+README.md
 .git
 .env
 *.log

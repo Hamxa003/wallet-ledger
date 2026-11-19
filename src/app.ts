@@ -3,6 +3,8 @@ import type { Pool } from 'pg';
 import { registerAuth } from './auth';
 import type { Config } from './config';
 import { registerErrorHandling } from './errors';
+import { LedgerService } from './ledger';
+import { registerLedgerRoutes } from './routes';
 import { assertReviverSourceSupported, parseJsonStrict } from './validation';
 
 export interface AppDeps {
@@ -17,6 +19,7 @@ export function buildApp({ config, pool, logger = true }: AppDeps): FastifyInsta
   const app = Fastify({
     logger: logger ? { level: process.env.LOG_LEVEL || 'warn', redact: ['req.headers.authorization'] } : false,
     bodyLimit: 16 * 1024,
+    routerOptions: { maxParamLength: 1024 },
   });
 
   registerErrorHandling(app);
@@ -41,6 +44,8 @@ export function buildApp({ config, pool, logger = true }: AppDeps): FastifyInsta
       return reply.code(503).send({ status: 'unavailable' });
     }
   });
+
+  registerLedgerRoutes(app, new LedgerService(pool));
 
   return app;
 }

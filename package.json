@@ -1,0 +1,25 @@
+{
+  "name": "wallet-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsc -p tsconfig.json && node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "typescript": "5.9.3"
+  }
+}

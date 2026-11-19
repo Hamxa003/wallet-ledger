@@ -2,11 +2,11 @@ Scenario hot: 100 connections over 4 threads, 5s warmup then 30s measured, again
 
 | Endpoint | Requests | Req/s | p50 ms | p90 ms | p99 ms | max ms | Statuses |
 |---|---:|---:|---:|---:|---:|---:|---|
-| balance (hot user) | 13018 | 434 | 2.23 | 3.31 | 6.11 | 136.93 | 200: 13018 |
-| balance (other users) | 285183 | 9506 | 2.31 | 3.42 | 6.33 | 251.46 | 200: 285183 |
-| credit (hot user) | 33370 | 1112 | 25.83 | 36.74 | 56.71 | 507.63 | 200: 33370 |
-| credit (other users) | 171534 | 5718 | 2.44 | 3.66 | 6.66 | 253.34 | 200: 171534 |
-| debit (hot user) | 19960 | 665 | 25.83 | 36.61 | 56.30 | 498.00 | 200: 19960 |
-| debit (other users) | 113824 | 3794 | 2.45 | 3.67 | 6.60 | 250.43 | 200: 113821, 409: 3 |
+| balance (hot user) | 66854 | 2228 | 3.15 | 4.59 | 8.59 | 61.02 | 200: 66854 |
+| balance (other users) | 213723 | 7124 | 3.16 | 4.59 | 8.72 | 62.30 | 200: 213723 |
+| credit (hot user) | 167119 | 5571 | 4.40 | 6.66 | 11.48 | 68.30 | 200: 167119 |
+| credit (other users) | 128319 | 4277 | 3.34 | 4.95 | 9.23 | 64.05 | 200: 128319 |
+| debit (hot user) | 100575 | 3353 | 4.39 | 6.64 | 11.51 | 67.55 | 200: 100575 |
+| debit (other users) | 85248 | 2842 | 3.35 | 4.95 | 9.33 | 64.27 | 200: 85244, 409: 4 |
 
-Total 636889 requests (21230 req/s), unexpected statuses: 0, network errors: 0
+Total 761838 requests (25395 req/s), unexpected statuses: 0, network errors: 0

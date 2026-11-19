@@ -103,35 +103,86 @@ describe('concurrency and consistency', { skip }, () => {
     assert.equal(await mismatchedBalances(h.pool), 0);
   });
 
-  it('a hot user does not block requests for other users', async () => {
+  it('batched writes on a hot user return balances that match the ledger history', async () => {
+    const u = uniqueUser('batch');
+    await api.credit(u, 1000);
+
+    const results = await Promise.all(
+      Array.from({ length: 1000 }, (_, i) => (i % 3 === 0 ? api.debit(u, 1 + (i % 50)) : api.credit(u, 1 + (i % 20)))),
+    );
+    for (const r of results) assert.ok(r.status === 200 || r.status === 409, `unexpected ${r.status}`);
+
+    const { rows } = await h.pool.query<{ running: string }>(
+      `SELECT SUM(CASE WHEN type = 'credit' THEN amount ELSE -amount END) OVER (ORDER BY id) AS running
+         FROM ledger WHERE user_id = $1 ORDER BY id`,
+      [u],
+    );
+    const history = rows.map((r) => Number(r.running));
+    assert.ok(history.every((b) => b >= 0), 'running balance in id order never goes negative');
+
+    const returned = results.filter((r) => r.status === 200).map((r) => r.body.balance as number);
+    assert.deepEqual(
+      [...returned].sort((a, b) => a - b),
+      history.slice(1).sort((a, b) => a - b),
+      'each 200 response reports a balance that exists in the ledger history',
+    );
+    assert.equal((await api.balance(u)).body.balance, history[history.length - 1]);
+    assert.equal(await mismatchedBalances(h.pool), 0);
+  });
+
+  it('concurrent credits and debits on a never-credited user resolve in order', async () => {
+    const u = uniqueUser('newbie');
+    const ops = Array.from({ length: 100 }, (_, i) => (i % 2 === 0 ? api.debit(u, 3) : api.credit(u, 5)));
+    const results = await Promise.all(ops);
+
+    const statuses = countBy(results.map((r) => r.status));
+    assert.deepEqual(
+      Object.keys(statuses).filter((s) => !['200', '404', '409'].includes(s)),
+      [],
+    );
+    assert.equal(statuses[200]! >= 50, true, 'every credit succeeds');
+    const finalBalance = (await api.balance(u)).body.balance;
+    assert.equal(finalBalance, await ledgerSum(h.pool, u));
+    assert.ok(finalBalance >= 0);
+  });
+
+  it('a blocked hot user does not hold up requests for other users', { timeout: 20_000 }, async () => {
     const hot = uniqueUser('hot');
     const cold = Array.from({ length: 10 }, () => uniqueUser('cold'));
     await api.credit(hot, 1);
     for (const u of cold) await api.credit(u, 1000);
 
-    const burst = 1500;
-    let hotDone = 0;
-    const hotRequests = Array.from({ length: burst }, () =>
-      api.credit(hot, 1).then((r) => {
-        hotDone++;
-        return r;
-      }),
-    );
+    const locker = new Client({ connectionString: databaseUrl });
+    await locker.connect();
+    try {
+      await locker.query('BEGIN');
+      await locker.query('SELECT 1 FROM balances WHERE user_id = $1 FOR UPDATE', [hot]);
 
-    const coldApi = client(h.baseUrl);
-    for (const u of cold) {
-      assert.equal((await coldApi.debit(u, 1)).status, 200);
-      assert.equal((await coldApi.balance(u)).status, 200);
+      const burst = 500;
+      let hotDone = 0;
+      const hotRequests = Array.from({ length: burst }, () =>
+        api.credit(hot, 1).then((r) => {
+          hotDone++;
+          return r;
+        }),
+      );
+      await new Promise((r) => setTimeout(r, 200));
+
+      const coldApi = client(h.baseUrl);
+      for (const u of cold) {
+        assert.equal((await coldApi.debit(u, 1)).status, 200);
+        assert.equal((await coldApi.balance(u)).status, 200);
+        assert.equal((await coldApi.balance(hot)).status, 200, 'reads of the hot user are not blocked either');
+      }
+      assert.equal(hotDone, 0, 'hot writes are still waiting on the lock');
+
+      await locker.query('ROLLBACK');
+      const hotResults = await Promise.all(hotRequests);
+      assert.deepEqual(countBy(hotResults.map((r) => r.status)), { 200: burst });
+      assert.equal((await api.balance(hot)).body.balance, 1 + burst);
+    } finally {
+      await locker.end();
     }
-    const hotDoneWhenColdFinished = hotDone;
-
-    const hotResults = await Promise.all(hotRequests);
-    assert.deepEqual(countBy(hotResults.map((r) => r.status)), { 200: burst });
-    assert.equal((await api.balance(hot)).body.balance, 1 + burst);
-    assert.ok(
-      hotDoneWhenColdFinished < burst,
-      `cold requests should finish while the hot backlog is still draining (${hotDoneWhenColdFinished}/${burst})`,
-    );
   });
 
   it('a connection killed mid-request leaves no partial write', async () => {

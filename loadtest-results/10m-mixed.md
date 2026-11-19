@@ -2,8 +2,8 @@ Scenario mixed: 100 connections over 4 threads, 5s warmup then 30s measured, aga
 
 | Endpoint | Requests | Req/s | p50 ms | p90 ms | p99 ms | max ms | Statuses |
 |---|---:|---:|---:|---:|---:|---:|---|
-| balance | 298422 | 9947 | 4.39 | 6.90 | 13.64 | 169.26 | 200: 298422 |
-| credit | 179416 | 5981 | 4.51 | 7.21 | 14.56 | 128.42 | 200: 179416 |
-| debit | 119601 | 3987 | 4.51 | 7.13 | 14.38 | 128.46 | 200: 119595, 409: 6 |
+| balance | 311506 | 10384 | 4.37 | 6.41 | 11.96 | 49.59 | 200: 311506 |
+| credit | 186827 | 6228 | 4.48 | 6.64 | 12.17 | 50.43 | 200: 186827 |
+| debit | 124458 | 4149 | 4.49 | 6.66 | 12.19 | 50.26 | 200: 124457, 409: 1 |
 
-Total 597439 requests (19915 req/s), unexpected statuses: 0, network errors: 0
+Total 622791 requests (20760 req/s), unexpected statuses: 0, network errors: 0

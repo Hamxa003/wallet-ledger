@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Pool } from 'pg';
@@ -5,6 +6,8 @@ import type { Pool } from 'pg';
 const MIGRATION_LOCK_KEY = 72_410_001;
 
 export const MIGRATIONS_DIR = path.resolve(__dirname, '..', 'migrations');
+
+const checksum = (sql: string) => createHash('sha256').update(sql).digest('hex');
 
 export async function runMigrations(pool: Pool, dir = MIGRATIONS_DIR): Promise<string[]> {
   const files = (await readdir(dir)).filter((f) => f.endsWith('.sql')).sort();
@@ -16,20 +19,35 @@ export async function runMigrations(pool: Pool, dir = MIGRATIONS_DIR): Promise<s
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         name        text PRIMARY KEY,
+        checksum    text,
         applied_at  timestamptz NOT NULL DEFAULT now()
       )
     `);
+    await client.query('ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS checksum text');
 
-    const { rows } = await client.query<{ name: string }>('SELECT name FROM schema_migrations');
-    const done = new Set(rows.map((r) => r.name));
+    const { rows } = await client.query<{ name: string; checksum: string | null }>(
+      'SELECT name, checksum FROM schema_migrations',
+    );
+    const done = new Map(rows.map((r) => [r.name, r.checksum]));
 
     for (const file of files) {
-      if (done.has(file)) continue;
       const sql = await readFile(path.join(dir, file), 'utf8');
+      const sum = checksum(sql);
+
+      if (done.has(file)) {
+        const recorded = done.get(file);
+        if (recorded === null) {
+          await client.query('UPDATE schema_migrations SET checksum = $2 WHERE name = $1', [file, sum]);
+        } else if (recorded !== sum) {
+          throw new Error(`Migration ${file} was modified after it was applied; add a new migration instead`);
+        }
+        continue;
+      }
+
       await client.query('BEGIN');
       try {
         await client.query(sql);
-        await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
+        await client.query('INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)', [file, sum]);
         await client.query('COMMIT');
         applied.push(file);
       } catch (err) {

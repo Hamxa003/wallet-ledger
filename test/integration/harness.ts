@@ -33,7 +33,7 @@ export async function startHarness(poolMax = 10): Promise<Harness> {
   const url = databaseUrl!;
   await ensureDatabase(url);
 
-  const pool = new Pool({ connectionString: url, max: poolMax });
+  const pool = new Pool({ connectionString: url, max: poolMax, connectionTimeoutMillis: 5_000 });
   pool.on('error', () => undefined);
   await runMigrations(pool);
   await pool.query('ALTER TABLE ledger DISABLE TRIGGER ledger_no_truncate');
